@@ -1,0 +1,8 @@
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - esbuild
+  - protobufjs
+overrides:
+  Livw2dWidget: link:../vue/Livw2dWidget
+  Live2dWidget: link:../Vue/Live2dWidget
+  '@snowdream39/live2d-widget': link:../../Vue/Live2dWidget

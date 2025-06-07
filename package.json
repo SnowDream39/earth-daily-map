@@ -12,10 +12,13 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@ameinhardt/unocss-preset-daisy": "^1.1.8",
     "@element-plus/icons-vue": "^2.3.1",
+    "@snowdream39/live2d-widget": "link:..\\..\\Vue\\Live2dWidget",
+    "@unocss/reset": "^66.1.4",
     "axios": "^1.9.0",
     "cesium": "^1.130.0",
-    "live2d-widget": "link:D:/Project/Vue/Live2dWidget",
+    "daisyui": "^5.0.43",
     "mitt": "^3.0.1",
     "pinia": "^3.0.1",
     "vite-plugin-cesium": "^1.2.23",
