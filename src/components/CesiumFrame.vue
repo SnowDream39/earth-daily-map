@@ -1,8 +1,32 @@
 <template>
   <div class="cesium-container">
+    <!-- 筛选面板 -->
+    <div class="filter-form" style="margin-bottom: 16px;">
+      <label>
+        开始时间：
+        <input type="date" v-model="filters.startTime" />
+      </label>
+
+      <label style="margin-left: 12px;">
+        结束时间：
+        <input type="date" v-model="filters.endTime" />
+      </label>
+
+      <label style="margin-left: 12px;">
+        类别名称：
+        <select v-model="filters.category">
+          <option value="">全部</option>
+          <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- 地图容器 -->
     <div ref="mapRef" class="cesium-viewer"></div>
+
+    <!-- 组件面板 -->
     <LayerPanel />
-    
+
     <!-- 城市加载状态提示 -->
     <div v-if="cityLoadingStatus.isLoading" class="loading-overlay">
       <div class="loading-content">
@@ -14,28 +38,45 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, reactive } from "vue";
+import { onMounted, onUnmounted, ref, reactive,watch } from "vue";
 import { useCesiumStore } from "@/stores/cesium";
 import LayerPanel from "./LayerPanel.vue";
 import * as Cesium from "cesium";
 import emitter from "../utils/emitter";
 import axios from "axios";
 
+const categories = [
+   'technology', 'sports', 'entertainment',
+  'general', 'health', 'science'
+];
+const filters = reactive({
+  startTime: '',
+  endTime: '',
+  category: '',
+});
+
 // 新闻相关接口定义
-interface Location {
-  lat: number
-  lng: number
+interface LocationItem {
+  location?: string;//虽然都有，但后面不需要
+  lat: number;
+  lng: number;
+}
+
+interface Source {
+  id: string | null;
+  name: string;
 }
 
 interface Article {
-  id: number
-  title: string
-  description: string
-  url: string
-  locations: Location[]
-  publishTime?: string
-  source?: string
-  category?: string
+  source: Source;
+  author: string;
+  title: string;
+  description: string;
+  url: string;
+  urlToImage: string | null;
+  publishedAt: string;
+  content: string | null;
+  location: LocationItem[];//一条新闻可能对应多个
 }
 
 // 城市数据接口定义
@@ -69,7 +110,7 @@ const newsLoadingStatus = reactive({
 });
 
 // 新闻点偏移公式，防止点重叠
-function offsetLocation(lat: number, lng: number, radiusInMeters: number): Location {
+function offsetLocation(lat: number, lng: number, radiusInMeters: number): LocationItem {
   const meterToDegreeLat = radiusInMeters / 111000
   const meterToDegreeLng = radiusInMeters / (111000 * Math.cos(lat * Math.PI / 180))
   const angle = Math.random() * 2 * Math.PI
@@ -80,7 +121,7 @@ function offsetLocation(lat: number, lng: number, radiusInMeters: number): Locat
 }
 
 // 生成新闻描述信息
-function generateNewsDescription(article: Article): string {
+function generateNewsDescription(article: Article,category?:string): string {
   return `
     <div style="font-family: Microsoft YaHei; max-width: 400px;">
       <h3 style="margin: 0 0 12px 0; color: #c0392b; font-size: 16px; line-height: 1.4;">
@@ -94,8 +135,8 @@ function generateNewsDescription(article: Article): string {
       <div style="margin: 12px 0; padding: 8px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
         <div style="display: flex; flex-wrap: wrap; gap: 15px; font-size: 12px; color: #7f8c8d;">
           ${article.source ? `<span><strong>来源:</strong> ${article.source}</span>` : ''}
-          ${article.category ? `<span><strong>分类:</strong> ${article.category}</span>` : ''}
-          ${article.publishTime ? `<span><strong>时间:</strong> ${new Date(article.publishTime).toLocaleString('zh-CN')}</span>` : ''}
+          ${category ? `<span><strong>分类:</strong> ${category}</span>` : ''}
+          ${article.publishedAt ? `<span><strong>时间:</strong> ${new Date(article.publishedAt).toLocaleString('zh-CN')}</span>` : ''}
         </div>
       </div>
       
@@ -108,10 +149,14 @@ function generateNewsDescription(article: Article): string {
       </div>
     </div>
   `;
-}
+}//数据中无category,要显示的话后面由筛选传入
 
 // 渲染新闻点功能
-async function renderNewsArticles() {
+async function renderNewsArticles(
+  category?: string,
+  startTime?: string,
+  endTime?: string,
+) {
   if (!viewer) {
     console.warn('Cesium viewer 未初始化');
     return;
@@ -121,8 +166,7 @@ async function renderNewsArticles() {
   newsLoadingStatus.message = '正在加载新闻数据...';
 
   try {
-    // 这里可以从API获取新闻数据，目前使用模拟数据
-    const articles = await loadNewsData();
+    const articles = await loadNewsData(category, startTime, endTime);
     
     if (!Array.isArray(articles) || articles.length === 0) {
       throw new Error('新闻数据为空');
@@ -148,7 +192,7 @@ async function renderNewsArticles() {
     const locIndex = new Map<string, number>();
     
     articles.forEach(article => {
-      article.locations.forEach(loc => {
+      article.location.forEach(loc => {
         const key = `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}`;
         locCount.set(key, (locCount.get(key) || 0) + 1);
       });
@@ -158,7 +202,7 @@ async function renderNewsArticles() {
 
     // 添加新闻实体，带偏移
     articles.forEach(article => {
-      article.locations.forEach(loc => {
+      article.location.forEach(loc => {
         const key = `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}`;
         const count = locCount.get(key) ?? 1;
         let pos = loc;
@@ -170,7 +214,7 @@ async function renderNewsArticles() {
         }
 
         // 根据新闻类别选择不同颜色
-        const color = getNewsColor(article.category);
+        const color = getNewsColor(category);
         
         const entity = viewer?.entities.add({
           name: `新闻: ${article.title}`,
@@ -203,12 +247,11 @@ async function renderNewsArticles() {
 
         // 添加新闻相关的自定义属性
         if (entity) {
-          entity.addProperty('articleId', article.id);
           entity.addProperty('newsTitle', article.title);
           entity.addProperty('newsUrl', article.url);
           entity.addProperty('newsCategory', article.category || '');
           entity.addProperty('newsSource', article.source || '');
-          entity.addProperty('publishTime', article.publishTime || '');
+          entity.addProperty('publishTime', article.publishedAt || '');
           addedCount++;
         }
       });
@@ -239,92 +282,40 @@ function getNewsColor(category?: string): Cesium.Color {
   const colorMap: { [key: string]: Cesium.Color } = {
     '政治': Cesium.Color.RED,
     '经济': Cesium.Color.GREEN,
-    '科技': Cesium.Color.BLUE,
-    '体育': Cesium.Color.ORANGE,
-    '娱乐': Cesium.Color.MAGENTA,
-    '社会': Cesium.Color.YELLOW,
+    'technology': Cesium.Color.BLUE,
+    'sports': Cesium.Color.ORANGE,
+    'entertainment': Cesium.Color.MAGENTA,
+    'general': Cesium.Color.YELLOW,
     '国际': Cesium.Color.PURPLE,
     '军事': Cesium.Color.DARKRED,
-    '环境': Cesium.Color.FORESTGREEN,
-    '健康': Cesium.Color.PINK
+    'health': Cesium.Color.FORESTGREEN,
+    'science': Cesium.Color.PINK
   };
   
   return colorMap[category || ''] || Cesium.Color.CRIMSON;
 }
 
-// 模拟新闻数据加载（实际项目中应该从API获取）
-async function loadNewsData(): Promise<Article[]> {
-  // 这里可以替换为真实的API调用
-  // const response = await axios.get('/api/news');
-  // return response.data;
-  
-  // 模拟数据
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: 1,
-          title: "北京科技创新中心建设取得重大进展",
-          description: "北京市在人工智能、量子计算等前沿科技领域取得突破性进展，多项技术达到国际先进水平。",
-          url: "https://example.com/news/1",
-          locations: [{ lat: 39.9042, lng: 116.4074 }],
-          publishTime: new Date().toISOString(),
-          source: "科技日报",
-          category: "科技"
-        },
-        {
-          id: 2,
-          title: "上海自贸区扩容，推动经济高质量发展",
-          description: "上海自贸区新增区域正式启动，将进一步推动贸易投资便利化，促进经济高质量发展。",
-          url: "https://example.com/news/2",
-          locations: [{ lat: 31.2304, lng: 121.4737 }],
-          publishTime: new Date(Date.now() - 3600000).toISOString(),
-          source: "经济日报",
-          category: "经济"
-        },
-        {
-          id: 3,
-          title: "广州举办国际体育赛事，提升城市影响力",
-          description: "广州成功举办多项国际体育赛事，展现了城市的组织能力和国际化水平。",
-          url: "https://example.com/news/3",
-          locations: [{ lat: 23.1291, lng: 113.2644 }],
-          publishTime: new Date(Date.now() - 7200000).toISOString(),
-          source: "体育报",
-          category: "体育"
-        },
-        {
-          id: 4,
-          title: "深圳新能源汽车产业蓬勃发展",
-          description: "深圳在新能源汽车研发制造方面持续发力，产业链日趋完善，市场份额不断扩大。",
-          url: "https://example.com/news/4",
-          locations: [{ lat: 22.5431, lng: 114.0579 }],
-          publishTime: new Date(Date.now() - 10800000).toISOString(),
-          source: "南方日报",
-          category: "科技"
-        },
-        {
-          id: 5,
-          title: "杭州数字经济发展成果显著",
-          description: "杭州数字经济核心产业增加值持续增长，数字化转型为经济发展注入新动能。",
-          url: "https://example.com/news/5",
-          locations: [{ lat: 30.2741, lng: 120.1551 }],
-          publishTime: new Date(Date.now() - 14400000).toISOString(),
-          source: "浙江日报",
-          category: "经济"
-        },
-        {
-          id: 6,
-          title: "成都文创产业创新发展，文化魅力持续彰显",
-          description: "成都文创产业在传承传统文化的基础上积极创新，形成了独特的文化产业生态。",
-          url: "https://example.com/news/6",
-          locations: [{ lat: 30.5728, lng: 104.0668 }],
-          publishTime: new Date(Date.now() - 18000000).toISOString(),
-          source: "四川日报",
-          category: "娱乐"
-        }
-      ]);
-    }, 500);
-  });
+//调用新闻数据加载
+async function loadNewsData(
+  category?: string,
+  startTime?: string,
+  endTime?: string
+): Promise<Article[]> {
+  const params = new URLSearchParams();
+  if (category) params.append("category", category);
+  if (startTime) params.append("start_time", startTime);
+  if (endTime) params.append("end_time", endTime);
+
+  const response = await fetch(`http://localhost:8000/news/locations/articles/with-location?${params.toString()}`);
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || "请求失败");
+  }
+
+  const data = await response.json();
+
+  //data.articles已经是 Article 类型结构，直接返回即可
+  return data.articles as Article[];
 }
 
 // 清除所有新闻点
@@ -352,7 +343,7 @@ function toggleNewsLabels(show: boolean): void {
   
   viewer.entities.values.forEach(entity => {
     if (entity.properties && entity.properties.hasProperty('articleId') && entity.label) {
-      entity.label.show = show;
+      entity.label.show = new Cesium.ConstantProperty(show);
     }
   });
   
@@ -826,7 +817,14 @@ function filterCitiesByProvince(provinceName: string | null): void {
   
   console.log(`筛选显示${provinceName || '所有'}省份的城市`);
 }
-
+watch(
+  () => [filters.category, filters.startTime, filters.endTime],
+  (newVals, oldVals) => {
+    const [newCategory, newStart, newEnd] = newVals as [string, string, string];
+    renderNewsArticles(newCategory, newStart, newEnd);
+  },
+  { immediate: true }
+);
 // 组件挂载
 onMounted(async () => {
   Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwZjEyZjczNS0wODgxLTRmYzMtOWU3MC00ZDIwZGUwMWM5NDMiLCJpZCI6MjgzMTE2LCJpYXQiOjE3NDIxODM2MDB9.6r_855sbwTi1KruUVqqC88aEcboIRcQNMg2ouQ9fPs8';
@@ -917,7 +915,41 @@ onUnmounted(() => {
     margin: 0;
   }
 }
-
+.filter-form {
+  position: absolute;
+  top: 200;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width:600px;
+  height:80px;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  label {
+    display: flex;
+    align-items: center;
+    margin-right: 16px;
+    
+    input, select {
+      margin-left: 8px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    
+    input[type="date"] {
+      width: 150px;
+    }
+    
+    select {
+      width: 120px;
+    }
+  }
+}
 // 加载状态遮罩
 .loading-overlay {
   position: absolute;
