@@ -1,6 +1,6 @@
 <template>
-  <header class="bg-paper h-10 w-full flex flex-row">
-    <div class="text-black dark:text-white text-lg">Earth Daily</div>
+  <header class="bg-paper pl-10 h-10 w-full flex flex-row">
+    <div class="text-black dark:text-white text-2xl">Earth Daily</div>
   </header>
 </template>
 
