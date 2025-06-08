@@ -34,6 +34,10 @@
         <div class="loading-text">{{ cityLoadingStatus.message }}</div>
       </div>
     </div>
+    <!--新闻详情-->
+    <div>
+    <div v-if="showPopup" class="popup" @click.self="closePopup" v-html="popupHtml"></div>
+    </div>
   </div>
 </template>
 
@@ -55,7 +59,13 @@ const filters = reactive({
   endTime: '',
   category: '',
 });
+//弹窗事件：
+const showPopup = ref(false)
+const popupHtml = ref('')
 
+function closePopup() {
+  showPopup.value = false
+}
 const cesiumStore = useCesiumStore();
 const emit = defineEmits(['update']);
 const mapRef = ref<HTMLDivElement | null>(null);
@@ -210,20 +220,18 @@ async function renderNewsArticles(
             scaleByDistance: new Cesium.NearFarScalar(1000, 1.0, 5000000, 0.0),
             disableDepthTestDistance: Number.POSITIVE_INFINITY
           },
+          // 添加新闻相关的自定义属性
+          properties: new Cesium.PropertyBag({
+          articleId: new Cesium.ConstantProperty(article.id),
+          newsTitle: new Cesium.ConstantProperty(article.title),
+          newsUrl: new Cesium.ConstantProperty(article.url),
+          newsSource: new Cesium.ConstantProperty(article.source || ''),
+          publishTime: new Cesium.ConstantProperty(article.publishedAt || ''),
+          description: new Cesium.ConstantProperty(article.description || ''),
+        }),
           description: generateNewsDescription(article),
           show: true
         });
-
-        // 添加新闻相关的自定义属性
-        if (entity) {
-          entity.addProperty('articleId', article.id);
-          entity.addProperty('newsTitle', article.title);
-          entity.addProperty('newsUrl', article.url);
-          entity.addProperty('newsCategory', article.category || '');
-          entity.addProperty('newsSource', article.source || '');
-          entity.addProperty('publishTime', article.publishedAt || '');
-          addedCount++;
-        }
       });
     });
 
@@ -529,12 +537,7 @@ async function loadCities() {
         });
 
         // 添加城市相关的自定义属性
-        entity.addProperty('cityCode', city.code || '');
-        entity.addProperty('province', city.province || '');
-        entity.addProperty('pinyin', city.pinyin || '');
-        entity.addProperty('level', city.level || 0);
-        entity.addProperty('longitude', longitude);
-        entity.addProperty('latitude', latitude);
+
 
         loadedCount++;
         
@@ -823,6 +826,43 @@ onMounted(async () => {
         renderNewsArticles();
       }
     };
+  //点击与description生成：
+const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+
+handler.setInputAction(
+  (click: { position: Cesium.Cartesian2; }) => {
+    console.log('点击事件触发', click.position);
+    if (!viewer) {
+      showPopup.value = false;
+      return;
+    }
+    const picked = viewer.scene.pick(click.position);
+    if (Cesium.defined(picked) && picked.id && picked.id.properties) {
+      const props = picked.id.properties;
+      const article = {
+        id: props.articleId?.getValue(new Date()),
+        title: props.newsTitle?.getValue(new Date()),
+        url: props.newsUrl?.getValue(new Date()),
+        category: props.newsCategory?.getValue(new Date()),
+        source: props.newsSource?.getValue(new Date()),
+        publishedAt: props.publishTime?.getValue(new Date()),
+        description: props.description?.getValue(new Date()),
+        author: '', // 补充缺失字段
+        urlToImage: '', // 补充缺失字段
+        content: '', // 补充缺失字段
+        location: [], // 补充缺失字段
+      };
+      popupHtml.value = generateNewsDescription(article, article.category);
+      showPopup.value = true;
+      console.log('popupHtml', popupHtml.value);
+    } else {
+      showPopup.value = false;
+    }
+  },
+  Cesium.ScreenSpaceEventType.LEFT_CLICK
+);
+
+  
     emitter.on('load-news', handleLoadNews);
     emitter.on('clear-news', clearNewsPoints);
     emitter.on('toggle-news-labels', (event: unknown) => {
@@ -885,6 +925,21 @@ onUnmounted(() => {
     height: 100%;
     margin: 0;
   }
+}
+.popup {
+  position: fixed;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 420px;
+  background: white;
+  box-shadow: 0 0 12px rgb(0 0 0 / 0.3);
+  border-radius: 8px;
+  padding: 20px;
+  z-index: 99999;
+  max-height: 70vh;
+  overflow-y: auto;
+  cursor: default;
 }
 .filter-form {
   position: absolute;

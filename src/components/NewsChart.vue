@@ -23,7 +23,7 @@ import { useChartStore } from '@/stores/charts'
 import { loadNewsData } from '@/stores/article' 
 
 const chartRef = ref<HTMLElement | null>(null)
-const selectedCategory = ref('some-category')
+const selectedCategory = ref('{category}')
 const categories = ref<string[]>([])
 const chartStore = useChartStore()
 let chartInstance: echarts.ECharts | null = null
