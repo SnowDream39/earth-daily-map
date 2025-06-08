@@ -791,7 +791,7 @@ function toggleCityLabels(show: boolean): void {
   viewer.entities.values.forEach(entity => {
     if (entity.label && entity.name !== '书签点' && 
         (!entity.properties || !entity.properties.hasProperty('articleId'))) {
-      entity.label.show = show;
+      entity.label.show = new Cesium.ConstantProperty(show);
     }
   });
   
@@ -854,17 +854,38 @@ onMounted(async () => {
     emitter.on('show-layers', showLayers);
     emitter.on('remove-all-layers', removeAll);
     emitter.on('load-cities', loadCities);
-    emitter.on('highlight-city', highlightCity);
+    emitter.on('highlight-city', (event: unknown) => {
+      if (typeof event === 'string') highlightCity(event);
+    });
     emitter.on('add-bookmark-point', addBookmarkPoint);
-    emitter.on('toggle-city-labels', toggleCityLabels);
-    emitter.on('filter-cities-by-province', filterCitiesByProvince);
-    
+    emitter.on('toggle-city-labels', (show: unknown) => {
+      if (typeof show === 'boolean') toggleCityLabels(show);
+    });
+    emitter.on('filter-cities-by-province', (event: unknown) => {
+      if (typeof event === 'string' || event === null) filterCitiesByProvince(event);
+    });
     // 新增新闻相关事件监听器
-    emitter.on('load-news', renderNewsArticles);
+    // 定义 load-news 事件处理函数，便于 off 时引用
+    const handleLoadNews = (event: unknown) => {
+      // 兼容传参方式：数组或对象
+      if (Array.isArray(event)) {
+        renderNewsArticles(event[0], event[1], event[2]);
+      } else if (typeof event === 'object' && event !== null) {
+        // 如果是对象，可以按属性名取
+        const { category, startTime, endTime } = event as { category?: string, startTime?: string, endTime?: string };
+        renderNewsArticles(category, startTime, endTime);
+      } else {
+        renderNewsArticles();
+      }
+    };
+    emitter.on('load-news', handleLoadNews);
     emitter.on('clear-news', clearNewsPoints);
-    emitter.on('toggle-news-labels', toggleNewsLabels);
-    emitter.on('filter-news-by-category', filterNewsByCategory);
-    
+    emitter.on('toggle-news-labels', (event: unknown) => {
+      if (typeof event === 'boolean') toggleNewsLabels(event);
+    });
+    emitter.on('filter-news-by-category', (event: unknown) => {
+      if (typeof event === 'string' || event === null) filterNewsByCategory(event);
+    });
   } catch (error) {
     console.error("初始化Cesium时发生错误:", error);
   }
@@ -878,11 +899,16 @@ onUnmounted(() => {
   emitter.off('show-layers', showLayers);
   emitter.off('remove-all-layers', removeAll);
   emitter.off('load-cities', loadCities);
-  emitter.off('highlight-city', highlightCity);
+  emitter.off('highlight-city', (event: unknown) => {
+    if (typeof event === 'string') highlightCity(event);
+  });
   emitter.off('add-bookmark-point', addBookmarkPoint);
-  emitter.off('toggle-city-labels', toggleCityLabels);
-  emitter.off('filter-cities-by-province', filterCitiesByProvince);
-  
+  emitter.off('toggle-city-labels', (show: unknown) => {
+    if (typeof show === 'boolean') toggleCityLabels(show);
+  });
+  emitter.off('filter-cities-by-province', (event: unknown) => {
+    if (typeof event === 'string' || event === null) filterCitiesByProvince(event);
+  });
   // 清理新闻相关事件监听器
   emitter.off('load-news', renderNewsArticles);
   emitter.off('clear-news', clearNewsPoints);
