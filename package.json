@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@ameinhardt/unocss-preset-daisy": "^1.1.8",
-    "@element-plus/icons-vue": "^2.3.1",
     "@snowdream39/live2d-widget": "link:..\\..\\Vue\\Live2dWidget",
     "@unocss/reset": "^66.1.4",
     "axios": "^1.9.0",
@@ -26,8 +25,10 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@iconify-json/material-symbols": "^1.2.24",
     "@tsconfig/node22": "^22.0.1",
     "@types/node": "^22.14.0",
+    "@unocss/preset-icons": "^66.1.4",
     "@vitejs/plugin-vue": "^5.2.3",
     "@vue/tsconfig": "^0.7.0",
     "npm-run-all2": "^7.0.2",
