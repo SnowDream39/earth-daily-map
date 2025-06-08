@@ -169,6 +169,8 @@ export const useCesiumStore = defineStore('cesium', {
         scaleByDistance: new Cesium.NearFarScalar(1.0e3, 10.0, 2.0e3, 1.0),
         // 最远的时候透明度为0.5
         translucencyByDistance: new Cesium.NearFarScalar(1.0e3, 1.0, 1.5e6, 0.5),
+        disableDepthTestDistance: 0,
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, Number.POSITIVE_INFINITY)
       })
       this.pointStyles['normal'] = normalPointStyle
 
@@ -180,6 +182,8 @@ export const useCesiumStore = defineStore('cesium', {
         outlineColor: Cesium.Color.BROWN,
         outlineWidth: 1,
         scaleByDistance: new Cesium.NearFarScalar(1.0e3, 10.0, 2.0e3, 1.0),
+        disableDepthTestDistance: 0,
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, Number.POSITIVE_INFINITY)
       })
       this.pointStyles['highlight'] = highlightPointStyle
 
