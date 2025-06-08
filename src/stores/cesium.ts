@@ -276,6 +276,13 @@ export const useCesiumStore = defineStore('cesium', {
       )
     },
 
+    destroyViewer() {
+      if (this.viewer) {
+        this.viewer.destroy();
+        this.viewer = null;
+      }
+    },
+
     initButtons() {
       if (!this.viewer) return
       if (this.viewer.homeButton) {
