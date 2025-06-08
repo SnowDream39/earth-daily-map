@@ -25,12 +25,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps } from 'vue'
-import axios from 'axios'
-
-// 这两个函数要根据你实际路径调整导入
+import { ref, computed } from 'vue'
+import { defineProps } from 'vue'
 import { loadNewsData } from '@/stores/article'
-import { preparePointsFromArticles } from '@/stores/export'
+import { exportMap as exportMapApi } from '@/stores/export' // 修改导入名以避免冲突
+import axios from 'axios'
 
 const props = defineProps<{
   centerLat: number
@@ -40,7 +39,7 @@ const props = defineProps<{
   height?: number
 }>()
 
-// 你可根据项目需求添加更多图层
+// 可根据项目需求添加更多图层
 const availableLayers = ref({
   'OpenStreetMap': { name: 'OpenStreetMap', type: 'OpenStreetMap' },
   'Gaode Vector': {
@@ -79,7 +78,13 @@ async function exportMap() {
     const articles = await loadNewsData()
 
     // 2. 从新闻转换点数据
-    const points = preparePointsFromArticles(articles)
+    const points = articles.map(article => ({
+      title: article.title,
+      description: article.description,
+      location: article.location,
+      url: article.url,
+      publishedAt: article.publishedAt,
+    }))
 
     // 3. 构造请求数据
     const postData = {
@@ -88,16 +93,16 @@ async function exportMap() {
       zoom: props.zoom,
       width: props.width || 1024,
       height: props.height || 768,
-      points,
+      articles: points, // 使用 articles 替代 points
       basemap_type: selectedBasemap.value,
     }
 
     // 4. 调用后端导出接口
-    const res = await axios.post('/export', postData)
-    if (res.data.success) {
-      exportedImage.value = res.data.image_base64
+    const res = await exportMapApi(postData) // 使用导入的 API 函数
+    if (res.success) {
+      exportedImage.value = res.image_base64 ?? null
     } else {
-      error.value = res.data.message || '导出失败'
+      error.value = res.message || '导出失败'
     }
   } catch (err: any) {
     error.value = err.response?.data?.detail ?? err.message ?? '未知错误'

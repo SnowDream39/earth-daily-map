@@ -31,3 +31,28 @@ export interface CityData {
   pinyin?: string;
   level?: number;
 }
+
+export interface ExportMapResponse {
+  success: boolean;
+  image_base64?: string | null;
+  message: string;
+  geojson?: GeoJSON.FeatureCollection | null;
+}
+//存在冲突，先临时定义一下
+export declare namespace GeoJSON {
+  export interface FeatureCollection {
+    type: "FeatureCollection";
+    features: Feature[];
+  }
+
+  export interface Feature {
+    type: "Feature";
+    geometry: Geometry;
+    properties: { [key: string]: any };
+  }
+
+  export type Geometry = {
+    type: "Point";
+    coordinates: [number, number];
+  };
+}

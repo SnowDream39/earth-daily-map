@@ -1,31 +1,16 @@
-import type { Article } from '@/types/news'
+import type { ExportMapResponse} from '@/types/news';
 
-interface PointData {
-  latitude: number
-  longitude: number
-  properties?: Record<string, any>
-}
-
-export async function preparePointsFromArticles(articles: Article[]): Promise<PointData[]> {
-  const points: PointData[] = []
-
-  for (const article of articles) {
-    // article.location 是 LocationItem[]，对应多个点
-    if (article.location && article.location.length) {
-      for (const loc of article.location) {
-        points.push({
-          latitude: loc.lat,  // 根据你的 LocationItem 字段名调整
-          longitude: loc.lng,
-          properties: {
-            title: article.title,
-            author: article.author,
-            publishedAt: article.publishedAt,
-            url: article.url,
-          }
-        })
-      }
-    }
+export async function exportMap(requestBody: any): Promise<ExportMapResponse> {
+  const response = await fetch('http://localhost:8000/map/export', {  // 修改此行
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
+  
+  if (!response.ok) {
+    throw new Error('网络错误');
   }
 
-  return points
+  const data: ExportMapResponse = await response.json();
+  return data;
 }
