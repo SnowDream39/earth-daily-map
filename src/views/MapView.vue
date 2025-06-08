@@ -4,6 +4,7 @@
   </div>
   <Live2dWidget :model-url="modelUrl" class="absolute right-0 bottom-0" />
   <Sidebar />
+  <NewsChart class="absolute left-30 bottom-0" />
 </template>
 
 <script lang="ts" setup>
