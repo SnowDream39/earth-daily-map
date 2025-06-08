@@ -10,6 +10,8 @@
 import Sidebar from '@/components/Sidebar.vue'
 import CesiumFrame from '@/components/CesiumFrame.vue'
 import LayerPanel from '@/components/LayerPanel.vue'
+import NewsChart from '@/components/NewsChart.vue'
+
 
 const HiyoriUrl = '/hiyori_free_zh/runtime/hiyori_free_t08.model3.json'
 const modelUrl = '/mao_pro_zh/runtime/mao_pro.model3.json'
