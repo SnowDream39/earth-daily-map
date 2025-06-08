@@ -12,4 +12,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      '/news/charts': {
+        target: 'http://localhost:8000', // FastAPI 运行的地址
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/news\/charts/, '/news/charts'),
+      },
+    },
+  },
 })
