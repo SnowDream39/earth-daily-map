@@ -226,7 +226,9 @@ async function renderNewsArticles(
             outlineWidth: 2,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             scaleByDistance: new Cesium.NearFarScalar(1000, 1.2, 10000000, 0.4),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY
+            disableDepthTestDistance: 0,  // 禁用深度测试
+            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, Number.POSITIVE_INFINITY)
+            //disableDepthTestDistance: Number.POSITIVE_INFINITY
           },
           label: {
             text: article.title.length > 20 ? article.title.substring(0, 20) + '...' : article.title,
