@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import type { NewsItem } from '@/types/news'
+import type { Article } from '@/types/news'
 
 export const useChartStore = defineStore('chart', {
   state: () => ({
@@ -10,7 +10,7 @@ export const useChartStore = defineStore('chart', {
   }),
 
   actions: {
-    async fetchChartData(newsItems: NewsItem[]) {
+    async fetchChartData(newsItems: Article[]) {
       this.loading = true
       this.error = null
       try {

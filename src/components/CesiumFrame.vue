@@ -42,52 +42,19 @@ import { onMounted, onUnmounted, ref, reactive,watch } from "vue";
 import { useCesiumStore } from "@/stores/cesium";
 import LayerPanel from "./LayerPanel.vue";
 import * as Cesium from "cesium";
-import emitter from "../utils/emitter";
+import emitter from "@/utils/emitter";
 import axios from "axios";
-
+import { loadNewsData } from "@/stores/article";
+import type { LocationItem, Source, Article, CityData } from "@/types/news";
 const categories = [
    'technology', 'sports', 'entertainment',
-  'general', 'health', 'science'
+  'general', 'health', 'science','business'
 ];
 const filters = reactive({
   startTime: '',
   endTime: '',
   category: '',
 });
-
-// 新闻相关接口定义
-interface LocationItem {
-  location?: string;//虽然都有，但后面不需要
-  lat: number;
-  lng: number;
-}
-
-interface Source {
-  id: string | null;
-  name: string;
-}
-
-interface Article {
-  source: Source;
-  author: string;
-  title: string;
-  description: string;
-  url: string;
-  urlToImage: string | null;
-  publishedAt: string;
-  content: string | null;
-  location: LocationItem[];//一条新闻可能对应多个
-}
-
-// 城市数据接口定义
-interface CityData {
-  name: string;
-  code?: string;
-  centerPoint: string; // "经度,纬度" 格式
-  province?: string;
-  pinyin?: string;
-  level?: number;
-}
 
 const cesiumStore = useCesiumStore();
 const emit = defineEmits(['update']);
@@ -247,6 +214,7 @@ async function renderNewsArticles(
 
         // 添加新闻相关的自定义属性
         if (entity) {
+          entity.addProperty('articleId', article.id);
           entity.addProperty('newsTitle', article.title);
           entity.addProperty('newsUrl', article.url);
           entity.addProperty('newsCategory', article.category || '');
@@ -280,43 +248,18 @@ async function renderNewsArticles(
 // 根据新闻类别获取颜色
 function getNewsColor(category?: string): Cesium.Color {
   const colorMap: { [key: string]: Cesium.Color } = {
-    '政治': Cesium.Color.RED,
-    '经济': Cesium.Color.GREEN,
     'technology': Cesium.Color.BLUE,
     'sports': Cesium.Color.ORANGE,
     'entertainment': Cesium.Color.MAGENTA,
     'general': Cesium.Color.YELLOW,
-    '国际': Cesium.Color.PURPLE,
-    '军事': Cesium.Color.DARKRED,
     'health': Cesium.Color.FORESTGREEN,
-    'science': Cesium.Color.PINK
+    'science': Cesium.Color.PINK,
+    'business': Cesium.Color.GOLD
   };
   
   return colorMap[category || ''] || Cesium.Color.CRIMSON;
 }
 
-//调用新闻数据加载
-async function loadNewsData(
-  category?: string,
-  startTime?: string,
-  endTime?: string
-): Promise<Article[]> {
-  const params = new URLSearchParams();
-  if (category) params.append("category", category);
-  if (startTime) params.append("start_time", startTime);
-  if (endTime) params.append("end_time", endTime);
-
-  const response = await fetch(`http://localhost:8000/news/locations/articles/with-location?${params.toString()}`);
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || "请求失败");
-  }
-
-  const data = await response.json();
-
-  //data.articles已经是 Article 类型结构，直接返回即可
-  return data.articles as Article[];
-}
 
 // 清除所有新闻点
 function clearNewsPoints() {

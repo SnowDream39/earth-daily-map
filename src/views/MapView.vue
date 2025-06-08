@@ -5,6 +5,15 @@
   <Live2dWidget :model-url="modelUrl" class="absolute right-0 bottom-0" />
   <Sidebar />
   <NewsChart class="absolute left-30 bottom-0" />
+  <exportMap
+    class=""
+    :centerLat="0"
+    :centerLng="0"
+    :zoom="1"
+    :width="800"
+    :height="600"
+    :points="[]"
+  />
 </template>
 
 <script lang="ts" setup>
@@ -12,6 +21,7 @@ import Sidebar from '@/components/Sidebar.vue'
 import CesiumFrame from '@/components/CesiumFrame.vue'
 import LayerPanel from '@/components/LayerPanel.vue'
 import NewsChart from '@/components/NewsChart.vue'
+import exportMap from '@/components/exportMap.vue'
 
 
 const HiyoriUrl = '/hiyori_free_zh/runtime/hiyori_free_t08.model3.json'

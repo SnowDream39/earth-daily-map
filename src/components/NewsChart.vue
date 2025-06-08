@@ -19,10 +19,13 @@ import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
 import axios from 'axios'
 import { loadTestData, getAvailableCategories } from '@/utils/testData'
+import { useChartStore } from '@/stores/charts'
+import { loadNewsData } from '@/stores/article' 
 
 const chartRef = ref<HTMLElement | null>(null)
-const selectedCategory = ref('general')
+const selectedCategory = ref('some-category')
 const categories = ref<string[]>([])
+const chartStore = useChartStore()
 let chartInstance: echarts.ECharts | null = null
 
 // 初始化图表
@@ -40,21 +43,12 @@ const loadCategories = async () => {
   }
 }
 
-// 加载数据并更新图表
 const loadData = async () => {
   try {
-    // 加载测试数据
-    const newsData = await loadTestData(selectedCategory.value)
-    
-    // 调用后端的图表生成API
-    const response = await axios.post('/news/charts/news-by-country', newsData)
-    
-    // 更新图表
-    if (chartInstance) {
-      chartInstance.setOption(response.data as EChartsOption)
-    }
-  } catch (error) {
-    console.error('获取图表数据失败:', error)
+    const newsItems = await loadNewsData(selectedCategory.value)
+    await chartStore.fetchChartData(newsItems)
+  } catch (e) {
+    console.error(e)
   }
 }
 
