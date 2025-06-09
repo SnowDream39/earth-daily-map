@@ -1,25 +1,34 @@
 <template>
-  <div class="bg-paper">
-    <h3>导出地图图片</h3>
+  <div class="bg-paper w-64 p-6 space-y-4 transition-all">
+    <h3 class="text-xl font-bold">🗺️ 导出地图图片</h3>
 
-    <div>
-      <label>选择底图类型: </label>
-      <select v-model="selectedBasemap">
+    <!-- 选择底图 -->
+    <div class="space-y-1">
+      <label class="block text-sm font-medium">选择底图类型：</label>
+      <select v-model="selectedBasemap"
+        class="w-full px-3 py-2 border rounded bg-white dark:bg-gray-900! dark:text-white! border-gray-300 dark:border-cyan-400! focus:outline-none focus:ring-2 focus:ring-blue-400! dark:focus:ring-cyan-400!">
         <option v-for="opt in basemapOptions" :key="opt.name" :value="opt.name">
           {{ opt.title }}
         </option>
       </select>
     </div>
 
-    <button @click="exportMap" :disabled="loading">
-      {{ loading ? '导出中...' : '导出当前视图' }}
+    <!-- 导出按钮 -->
+    <button @click="exportMap" :disabled="loading"
+      class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition">
+      {{ loading ? '导出中...' : '📤 导出当前视图' }}
     </button>
 
-    <div v-if="error" style="color: red; margin-top: 10px;">{{ error }}</div>
+    <!-- 错误信息 -->
+    <div v-if="error" class="text-red-500 text-sm">
+      ⚠️ {{ error }}
+    </div>
 
-    <div v-if="exportedImage" style="margin-top: 15px;">
-      <h4>导出图片预览</h4>
-      <img :src="`data:image/png;base64,${exportedImage}`" alt="导出地图" style="max-width: 100%;" />
+    <!-- 导出图片预览 -->
+    <div v-if="exportedImage" class="space-y-2">
+      <h4 class="text-lg font-semibold">📷 导出图片预览</h4>
+      <img :src="`data:image/png;base64,${exportedImage}`" alt="导出地图"
+        class="w-full rounded border border-gray-200 dark:border-cyan-400 shadow" />
     </div>
   </div>
 </template>

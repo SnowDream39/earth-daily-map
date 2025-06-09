@@ -625,6 +625,22 @@ function removeAll() {
   console.log("已清除所有图层");
 }
 
+// 新增新闻相关事件监听器
+// 定义 load-news 事件处理函数，便于 off 时引用
+const handleLoadNews = (event: unknown) => {
+  // 兼容传参方式：数组或对象
+  if (Array.isArray(event)) {
+    renderNewsArticles(event[0], event[1], event[2]);
+  } else if (typeof event === 'object' && event !== null) {
+    // 如果是对象，可以按属性名取
+    const { category, startTime, endTime } = event as { category?: string, startTime?: string, endTime?: string };
+    renderNewsArticles(category, startTime, endTime);
+  } else {
+    renderNewsArticles();
+  }
+};
+
+
 watch(
   () => [filters.category, filters.startTime, filters.endTime],
   (newVals, oldVals) => {
@@ -661,23 +677,9 @@ onMounted(async () => {
     emitter.on('show-layers', showLayers);
     emitter.on('remove-all-layers', removeAll);
     emitter.on('load-cities', loadCities);
-    // 新增新闻相关事件监听器
-    // 定义 load-news 事件处理函数，便于 off 时引用
-    const handleLoadNews = (event: unknown) => {
-      // 兼容传参方式：数组或对象
-      if (Array.isArray(event)) {
-        renderNewsArticles(event[0], event[1], event[2]);
-      } else if (typeof event === 'object' && event !== null) {
-        // 如果是对象，可以按属性名取
-        const { category, startTime, endTime } = event as { category?: string, startTime?: string, endTime?: string };
-        renderNewsArticles(category, startTime, endTime);
-      } else {
-        renderNewsArticles();
-      }
-    };
+
     //点击与description生成：
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
-
     handler.setInputAction(
       (click: { position: Cesium.Cartesian2; }) => {
         console.log('点击事件触发', click.position);
