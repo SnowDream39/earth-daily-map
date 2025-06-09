@@ -19,7 +19,9 @@ import { ref, nextTick, onMounted } from 'vue'
 import * as echarts from 'echarts'
 import { useChartStore } from '@/stores/charts'
 
-// 使用 Pinia store
+const chartRef = ref<HTMLElement | null>(null)
+const selectedCategory = ref('{category}')
+const categories = ref<string[]>([])
 const chartStore = useChartStore()
 
 // 本地状态
@@ -116,7 +118,8 @@ onMounted(() => {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  position: absolute; /* 必须使用 absolute 才能移动位置 */
+  position: absolute;
+  /* 必须使用 absolute 才能移动位置 */
   top: 100px;
   left: 100px;
   user-select: none;
@@ -128,7 +131,8 @@ onMounted(() => {
   border-bottom: 1px solid #eee;
   display: flex;
   justify-content: center;
-  cursor: move; /* 鼠标拖动时的样式 */
+  cursor: move;
+  /* 鼠标拖动时的样式 */
   background-color: #f9f9f9;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
