@@ -16,6 +16,7 @@ export default defineConfig({
     '-translate-x-full',
     'border-gray-300',
     'border-lime-400',
+    'ring-line-400',
     'shadow-lime-500/30',
     'i-material-symbols-thumb-up',
     'i-material-symbols-thumb-up-outline',

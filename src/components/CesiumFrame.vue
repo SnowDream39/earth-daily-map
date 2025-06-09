@@ -12,9 +12,7 @@
       </div>
     </div>
     <!--新闻详情-->
-    <div>
-      <div v-if="showPopup" class="popup" @click.self="closePopup" v-html="popupHtml"></div>
-    </div>
+    <Popup v-if="showPopup" :article="article" :category="article.category" :isNight="true" />
   </div>
 </template>
 
@@ -26,6 +24,8 @@ import emitter from "@/utils/emitter";
 import axios from "axios";
 import { loadNewsData } from "@/stores/article";
 import type { LocationItem, Source, Article, CityData } from "@/types/news";
+import Popup from "@/components/Popup.vue";
+
 
 const filters = reactive({
   startTime: '',
@@ -37,6 +37,9 @@ const categories = [
   'technology', 'sports', 'entertainment',
   'general', 'health', 'science'
 ];
+
+const article = ref<any>();
+
 //弹窗事件：
 const showPopup = ref(false)
 const popupHtml = ref('')
@@ -75,36 +78,6 @@ function offsetLocation(lat: number, lng: number, radiusInMeters: number): Locat
   }
 }
 
-// 生成新闻描述信息
-function generateNewsDescription(article: Article, category?: string): string {
-  return `
-    <div style="font-family: Microsoft YaHei; max-width: 400px;">
-      <h3 style="margin: 0 0 12px 0; color: #c0392b; font-size: 16px; line-height: 1.4;">
-        ${article.title}
-      </h3>
-      
-      <div style="margin-bottom: 12px; line-height: 1.6; color: #2c3e50;">
-        ${article.description}
-      </div>
-      
-      <div style="margin: 12px 0; padding: 8px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-        <div style="display: flex; flex-wrap: wrap; gap: 15px; font-size: 12px; color: #7f8c8d;">
-          ${article.source ? `<span><strong>来源:</strong> ${article.source}</span>` : ''}
-          ${category ? `<span><strong>分类:</strong> ${category}</span>` : ''}
-          ${article.publishedAt ? `<span><strong>时间:</strong> ${new Date(article.publishedAt).toLocaleString('zh-CN')}</span>` : ''}
-        </div>
-      </div>
-      
-      <div style="margin-top: 15px;">
-        <a href="${article.url}" 
-           target="_blank" 
-           style="color: #3498db; text-decoration: none; font-weight: 500;">
-          📰 阅读完整新闻
-        </a>
-      </div>
-    </div>
-  `;
-}//数据中无category,要显示的话后面由筛选传入
 
 // 渲染新闻点功能
 async function renderNewsArticles(
@@ -207,7 +180,6 @@ async function renderNewsArticles(
             publishTime: new Cesium.ConstantProperty(article.publishedAt || ''),
             description: new Cesium.ConstantProperty(article.description || ''),
           }),
-          description: generateNewsDescription(article),
           show: true
         });
       });
@@ -300,264 +272,7 @@ function filterNewsByCategory(category: string | null): void {
   console.log(`筛选显示${category || '所有'}类别的新闻`);
 }
 
-// 解析坐标的辅助函数
-function parseCoordinates(centerPoint: string): { longitude: number; latitude: number } | null {
-  try {
-    let longitude: number, latitude: number;
 
-    if (centerPoint.includes(',')) {
-      const parts = centerPoint.split(',').map(s => s.trim());
-      if (parts.length !== 2) return null;
-      longitude = parseFloat(parts[0]);
-      latitude = parseFloat(parts[1]);
-    } else if (centerPoint.includes(' ')) {
-      const parts = centerPoint.split(' ').filter(s => s.trim());
-      if (parts.length !== 2) return null;
-      longitude = parseFloat(parts[0]);
-      latitude = parseFloat(parts[1]);
-    } else {
-      return null;
-    }
-
-    if (isNaN(longitude) || isNaN(latitude)) return null;
-    return { longitude, latitude };
-  } catch (error) {
-    return null;
-  }
-}
-
-// 验证坐标有效性
-function isValidCoordinate(longitude: number, latitude: number): boolean {
-  return longitude >= 70 && longitude <= 140 &&
-    latitude >= 0 && latitude <= 60;
-}
-
-// 根据城市级别获取点的大小
-function getCityPointSize(level?: number): number {
-  if (!level) return 8;
-  switch (level) {
-    case 1: return 12; // 直辖市/省会
-    case 2: return 10; // 地级市
-    case 3: return 8;  // 县级市
-    default: return 6; // 其他
-  }
-}
-
-// 获取城市级别文本
-function getCityLevelText(level: number): string {
-  const levelMap: { [key: number]: string } = {
-    1: '直辖市/省会城市',
-    2: '地级市',
-    3: '县级市',
-    4: '县城',
-    5: '乡镇'
-  };
-  return levelMap[level] || '未知级别';
-}
-
-// 生成城市描述
-function generateCityDescription(city: CityData): string {
-  const coordinates = parseCoordinates(city.centerPoint);
-
-  return `
-    <div style="font-family: Microsoft YaHei; max-width: 300px;">
-      <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${city.name}</h3>
-      
-      <div style="margin-bottom: 8px;">
-        <strong>基本信息:</strong>
-      </div>
-      
-      <div style="margin-left: 15px; line-height: 1.6;">
-        ${city.code ? `<div>• 代码：${city.code}</div>` : ''}
-        ${city.province ? `<div>• 省份：${city.province}</div>` : ''}
-        ${city.pinyin ? `<div>• 拼音：${city.pinyin}</div>` : ''}
-        ${city.level ? `<div>• 级别：${getCityLevelText(city.level)}</div>` : ''}
-      </div>
-      
-      <div style="margin: 10px 0 8px 0;">
-        <strong>地理位置:</strong>
-      </div>
-      
-      <div style="margin-left: 15px; line-height: 1.6;">
-        ${coordinates ? `
-          <div>• 经度：${coordinates.longitude.toFixed(6)}</div>
-          <div>• 纬度：${coordinates.latitude.toFixed(6)}</div>
-        ` : `<div>• 坐标：${city.centerPoint}</div>`}
-      </div>
-      
-      <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee;">
-        <a href="https://baike.baidu.com/item/${encodeURIComponent(city.name)}" 
-           target="_blank" 
-           style="color: #3498db; text-decoration: none;">
-          📖 查看百度百科
-        </a>
-        <span style="margin: 0 10px;">|</span>
-        <a href="https://www.amap.com/search?query=${encodeURIComponent(city.name)}" 
-           target="_blank" 
-           style="color: #3498db; text-decoration: none;">
-          🗺️ 在高德地图中查看
-        </a>
-      </div>
-    </div>
-  `;
-}
-
-// 飞行到中国视角
-async function flyToChinaView(): Promise<void> {
-  if (!viewer) return;
-
-  try {
-    await viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(104.0, 35.0, 5000000),
-      duration: 2.0
-    });
-  } catch (error) {
-    console.warn('飞行到中国视角失败:', error);
-  }
-}
-
-// 优化后的加载城市函数
-async function loadCities() {
-  if (!viewer) {
-    console.warn('Cesium viewer 未初始化');
-    return;
-  }
-
-  cityLoadingStatus.isLoading = true;
-  cityLoadingStatus.message = '正在加载城市数据...';
-
-  try {
-    console.log('开始加载城市数据...');
-
-    // 加载城市数据
-    const response = await axios.get('/cityList.json');
-    const cities: CityData[] = response.data;
-
-    if (!Array.isArray(cities) || cities.length === 0) {
-      throw new Error('城市数据为空或格式不正确');
-    }
-
-    cityLoadingStatus.message = `正在处理 ${cities.length} 个城市...`;
-
-    let loadedCount = 0;
-    let errorCount = 0;
-
-    // 清除现有的城市点（除了书签点和新闻点）
-    const entitiesToRemove: Cesium.Entity[] = [];
-    viewer.entities.values.forEach(entity => {
-      if (entity.point && entity.name !== '书签点' &&
-        entity.label?.text !== '书签点' &&
-        (!entity.properties || !entity.properties.hasProperty('articleId'))) {
-        entitiesToRemove.push(entity);
-      }
-    });
-
-    console.log(`清除现有城市点: ${entitiesToRemove.length} 个`);
-    entitiesToRemove.forEach(entity => {
-      viewer?.entities.remove(entity);
-    });
-
-    // 批量添加城市点
-    for (const city of cities) {
-      try {
-        // 验证城市数据完整性
-        if (!city.name || !city.centerPoint) {
-          console.warn('城市数据不完整:', city);
-          errorCount++;
-          continue;
-        }
-
-        // 解析经纬度
-        const coordinates = parseCoordinates(city.centerPoint);
-        if (!coordinates) {
-          console.warn(`城市 ${city.name} 坐标格式错误: ${city.centerPoint}`);
-          errorCount++;
-          continue;
-        }
-
-        const { longitude, latitude } = coordinates;
-
-        // 验证经纬度范围
-        if (!isValidCoordinate(longitude, latitude)) {
-          console.warn(`城市 ${city.name} 坐标超出有效范围: [${longitude}, ${latitude}]`);
-          errorCount++;
-          continue;
-        }
-
-        // 创建城市点实体
-        const entity = viewer.entities.add({
-          name: city.name,
-          id: city.name,
-          position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
-          point: {
-            ...cesiumStore.pointStyles.normal,
-            pixelSize: getCityPointSize(city.level),
-            outlineWidth: 1,
-            outlineColor: Cesium.Color.WHITE,
-            scaleByDistance: new Cesium.NearFarScalar(1000, 1.0, 10000000, 0.3),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY
-          },
-          label: {
-            text: city.name,
-            font: '12pt Microsoft YaHei',
-            fillColor: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 2,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            pixelOffset: new Cesium.Cartesian2(0, -15),
-            show: false,
-            scaleByDistance: new Cesium.NearFarScalar(1000, 1.0, 8000000, 0.0),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY
-          },
-          description: generateCityDescription(city),
-          show: true
-        });
-
-        // 添加城市相关的自定义属性
-
-
-        loadedCount++;
-
-        // 每加载100个城市更新一次进度
-        if (loadedCount % 100 === 0) {
-          cityLoadingStatus.message = `已加载 ${loadedCount}/${cities.length} 个城市...`;
-          // 让界面有机会更新
-          await new Promise(resolve => setTimeout(resolve, 1));
-        }
-
-      } catch (error) {
-        console.error(`添加城市点失败 - ${city.name}:`, error);
-        errorCount++;
-      }
-    }
-
-    console.log(`城市点加载完成: 成功 ${loadedCount} 个, 失败 ${errorCount} 个`);
-
-    // 通知面板城市数据已加载
-    emitter.emit('cities-loaded', loadedCount);
-
-    // 飞行到中国中心位置以查看所有城市点
-    cityLoadingStatus.message = '调整视角中...';
-    await flyToChinaView();
-
-
-
-  } catch (error) {
-    console.error('加载城市数据失败:', error);
-    cityLoadingStatus.message = '加载失败: ' + (error as Error).message;
-    setTimeout(() => {
-      cityLoadingStatus.isLoading = false;
-    }, 3000);
-    // 发送错误事件
-    emitter.emit('cities-load-error', error);
-    return;
-  } finally {
-    setTimeout(() => {
-      cityLoadingStatus.isLoading = false;
-    }, 1000);
-  }
-}
 
 // 高德图层添加函数
 function addGaodeLayer() {
@@ -676,7 +391,6 @@ onMounted(async () => {
     emitter.on('add-layer', addGaodeLayer);
     emitter.on('show-layers', showLayers);
     emitter.on('remove-all-layers', removeAll);
-    emitter.on('load-cities', loadCities);
 
     //点击与description生成：
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
@@ -690,7 +404,7 @@ onMounted(async () => {
         const picked = viewer.scene.pick(click.position);
         if (Cesium.defined(picked) && picked.id && picked.id.properties) {
           const props = picked.id.properties;
-          const article = {
+          article.value = {
             id: props.articleId?.getValue(new Date()),
             title: props.newsTitle?.getValue(new Date()),
             url: props.newsUrl?.getValue(new Date()),
@@ -703,9 +417,7 @@ onMounted(async () => {
             content: '', // 补充缺失字段
             location: [], // 补充缺失字段
           };
-          popupHtml.value = generateNewsDescription(article, article.category);
           showPopup.value = true;
-          console.log('popupHtml', popupHtml.value);
         } else {
           showPopup.value = false;
         }
@@ -733,7 +445,6 @@ onUnmounted(() => {
   emitter.off('add-layer', addGaodeLayer);
   emitter.off('show-layers', showLayers);
   emitter.off('remove-all-layers', removeAll);
-  emitter.off('load-cities', loadCities);
   // 清理新闻相关事件监听器
   emitter.off('load-news', renderNewsArticles);
   emitter.off('clear-news', clearNewsPoints);

@@ -170,7 +170,7 @@ export const useCesiumStore = defineStore('cesium', {
         // 最远的时候透明度为0.5
         translucencyByDistance: new Cesium.NearFarScalar(1.0e3, 1.0, 1.5e6, 0.5),
         disableDepthTestDistance: 0,
-        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, Number.POSITIVE_INFINITY)
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, Number.POSITIVE_INFINITY),
       })
       this.pointStyles['normal'] = normalPointStyle
 
@@ -183,7 +183,7 @@ export const useCesiumStore = defineStore('cesium', {
         outlineWidth: 1,
         scaleByDistance: new Cesium.NearFarScalar(1.0e3, 10.0, 2.0e3, 1.0),
         disableDepthTestDistance: 0,
-        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, Number.POSITIVE_INFINITY)
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, Number.POSITIVE_INFINITY),
       })
       this.pointStyles['highlight'] = highlightPointStyle
 
@@ -282,21 +282,8 @@ export const useCesiumStore = defineStore('cesium', {
 
     destroyViewer() {
       if (this.viewer) {
-        this.viewer.destroy();
-        this.viewer = null;
-      }
-    },
-
-    initButtons() {
-      if (!this.viewer) return
-      if (this.viewer.homeButton) {
-        this.viewer.homeButton.viewModel.command.beforeExecute.addEventListener((e: any) => {
-          // 好像没用。
-          e.cancel = true
-          this.viewer?.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(120.1, 30.35, 15000.0),
-          })
-        })
+        this.viewer.destroy()
+        this.viewer = null
       }
     },
   },
