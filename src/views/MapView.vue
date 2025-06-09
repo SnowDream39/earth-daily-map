@@ -1,10 +1,10 @@
 <template>
   <Header />
-  <div class="relative w-full flex-1 bg-black">
-    <CesiumFrame v-if="!isComment" class="w-full h-full" />
-    <ArticleFrame v-if="isComment" class="w-full h-full" />
-
+  <div class="relative w-full flex-1 bg-black flex flex-row">
     <Sidebar />
+    <CesiumFrame v-if="!isArticle" class="w-full h-full" />
+    <ArticleFrame v-if="isArticle" :back="togglePage" class="w-full h-full" />
+
   </div>
   <Live2dWidget :model-url="modelUrl" class="absolute right-0 bottom-0" />
 </template>
@@ -19,7 +19,11 @@ import ArticleFrame from '@/components/ArticleFrame.vue'
 const HiyoriUrl = '/hiyori_free_zh/runtime/hiyori_free_t08.model3.json'
 const modelUrl = '/mao_pro_zh/runtime/mao_pro.model3.json'
 
-const isComment = ref(true);
+const isArticle = ref(true);
+
+const togglePage = () => {
+  isArticle.value = !isArticle.value;
+};
 </script>
 
 <style lang="scss" scoped></style>

@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, reactive,watch } from "vue";
+import { onMounted, onUnmounted, ref, reactive, watch } from "vue";
 import { useCesiumStore } from "@/stores/cesium";
 import LayerPanel from "./LayerPanel.vue";
 import * as Cesium from "cesium";
@@ -46,7 +46,7 @@ import emitter from "../utils/emitter";
 import axios from "axios";
 
 const categories = [
-   'technology', 'sports', 'entertainment',
+  'technology', 'sports', 'entertainment',
   'general', 'health', 'science'
 ];
 const filters = reactive({
@@ -121,7 +121,7 @@ function offsetLocation(lat: number, lng: number, radiusInMeters: number): Locat
 }
 
 // 生成新闻描述信息
-function generateNewsDescription(article: Article,category?:string): string {
+function generateNewsDescription(article: Article, category?: string): string {
   return `
     <div style="font-family: Microsoft YaHei; max-width: 400px;">
       <h3 style="margin: 0 0 12px 0; color: #c0392b; font-size: 16px; line-height: 1.4;">
@@ -167,7 +167,7 @@ async function renderNewsArticles(
 
   try {
     const articles = await loadNewsData(category, startTime, endTime);
-    
+
     if (!Array.isArray(articles) || articles.length === 0) {
       throw new Error('新闻数据为空');
     }
@@ -181,7 +181,7 @@ async function renderNewsArticles(
         newsEntitiesToRemove.push(entity);
       }
     });
-    
+
     console.log(`清除现有新闻点: ${newsEntitiesToRemove.length} 个`);
     newsEntitiesToRemove.forEach(entity => {
       viewer?.entities.remove(entity);
@@ -190,7 +190,7 @@ async function renderNewsArticles(
     // 统计相同坐标的新闻数量
     const locCount = new Map<string, number>();
     const locIndex = new Map<string, number>();
-    
+
     articles.forEach(article => {
       article.location.forEach(loc => {
         const key = `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}`;
@@ -215,7 +215,7 @@ async function renderNewsArticles(
 
         // 根据新闻类别选择不同颜色
         const color = getNewsColor(category);
-        
+
         const entity = viewer?.entities.add({
           name: `新闻: ${article.title}`,
           position: Cesium.Cartesian3.fromDegrees(pos.lng, pos.lat),
@@ -258,7 +258,7 @@ async function renderNewsArticles(
     });
 
     console.log(`新闻点渲染完成: ${addedCount} 个新闻点`);
-    
+
     // 通知面板新闻数据已加载
     emitter.emit('news-loaded', addedCount);
 
@@ -291,7 +291,7 @@ function getNewsColor(category?: string): Cesium.Color {
     'health': Cesium.Color.FORESTGREEN,
     'science': Cesium.Color.PINK
   };
-  
+
   return colorMap[category || ''] || Cesium.Color.CRIMSON;
 }
 
@@ -306,7 +306,7 @@ async function loadNewsData(
   if (startTime) params.append("start_time", startTime);
   if (endTime) params.append("end_time", endTime);
 
-  const response = await fetch(`http://localhost:8000/news/locations/articles/with-location?${params.toString()}`);
+  const response = await fetch(`http://8.209.210.116:7000/news/locations/articles/with-location?${params.toString()}`);
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.detail || "请求失败");
@@ -321,18 +321,18 @@ async function loadNewsData(
 // 清除所有新闻点
 function clearNewsPoints() {
   if (!viewer) return;
-  
+
   const newsEntitiesToRemove: Cesium.Entity[] = [];
   viewer.entities.values.forEach(entity => {
     if (entity.properties && entity.properties.hasProperty('articleId')) {
       newsEntitiesToRemove.push(entity);
     }
   });
-  
+
   newsEntitiesToRemove.forEach(entity => {
     viewer?.entities.remove(entity);
   });
-  
+
   console.log(`已清除 ${newsEntitiesToRemove.length} 个新闻点`);
   emitter.emit('news-cleared');
 }
@@ -340,24 +340,24 @@ function clearNewsPoints() {
 // 显示/隐藏新闻标签
 function toggleNewsLabels(show: boolean): void {
   if (!viewer) return;
-  
+
   viewer.entities.values.forEach(entity => {
     if (entity.properties && entity.properties.hasProperty('articleId') && entity.label) {
       entity.label.show = new Cesium.ConstantProperty(show);
     }
   });
-  
+
   console.log(`新闻标签${show ? '显示' : '隐藏'}`);
 }
 
 // 根据类别筛选新闻点
 function filterNewsByCategory(category: string | null): void {
   if (!viewer) return;
-  
+
   viewer.entities.values.forEach(entity => {
     if (entity.properties && entity.properties.hasProperty('articleId')) {
       const entityCategory = entity.properties.newsCategory?.getValue();
-      
+
       if (category === null) {
         entity.show = true;
       } else {
@@ -365,7 +365,7 @@ function filterNewsByCategory(category: string | null): void {
       }
     }
   });
-  
+
   console.log(`筛选显示${category || '所有'}类别的新闻`);
 }
 
@@ -373,7 +373,7 @@ function filterNewsByCategory(category: string | null): void {
 function parseCoordinates(centerPoint: string): { longitude: number; latitude: number } | null {
   try {
     let longitude: number, latitude: number;
-    
+
     if (centerPoint.includes(',')) {
       const parts = centerPoint.split(',').map(s => s.trim());
       if (parts.length !== 2) return null;
@@ -397,8 +397,8 @@ function parseCoordinates(centerPoint: string): { longitude: number; latitude: n
 
 // 验证坐标有效性
 function isValidCoordinate(longitude: number, latitude: number): boolean {
-  return longitude >= 70 && longitude <= 140 && 
-         latitude >= 0 && latitude <= 60;
+  return longitude >= 70 && longitude <= 140 &&
+    latitude >= 0 && latitude <= 60;
 }
 
 // 根据城市级别获取点的大小
@@ -427,7 +427,7 @@ function getCityLevelText(level: number): string {
 // 生成城市描述
 function generateCityDescription(city: CityData): string {
   const coordinates = parseCoordinates(city.centerPoint);
-  
+
   return `
     <div style="font-family: Microsoft YaHei; max-width: 300px;">
       <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${city.name}</h3>
@@ -474,7 +474,7 @@ function generateCityDescription(city: CityData): string {
 // 飞行到中国视角
 async function flyToChinaView(): Promise<void> {
   if (!viewer) return;
-  
+
   try {
     await viewer.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(104.0, 35.0, 5000000),
@@ -491,17 +491,17 @@ async function loadCities() {
     console.warn('Cesium viewer 未初始化');
     return;
   }
-  
+
   cityLoadingStatus.isLoading = true;
   cityLoadingStatus.message = '正在加载城市数据...';
-  
+
   try {
     console.log('开始加载城市数据...');
-    
+
     // 加载城市数据
     const response = await axios.get('/cityList.json');
     const cities: CityData[] = response.data;
-    
+
     if (!Array.isArray(cities) || cities.length === 0) {
       throw new Error('城市数据为空或格式不正确');
     }
@@ -514,13 +514,13 @@ async function loadCities() {
     // 清除现有的城市点（除了书签点和新闻点）
     const entitiesToRemove: Cesium.Entity[] = [];
     viewer.entities.values.forEach(entity => {
-      if (entity.point && entity.name !== '书签点' && 
-          entity.label?.text !== '书签点' && 
-          (!entity.properties || !entity.properties.hasProperty('articleId'))) {
+      if (entity.point && entity.name !== '书签点' &&
+        entity.label?.text !== '书签点' &&
+        (!entity.properties || !entity.properties.hasProperty('articleId'))) {
         entitiesToRemove.push(entity);
       }
     });
-    
+
     console.log(`清除现有城市点: ${entitiesToRemove.length} 个`);
     entitiesToRemove.forEach(entity => {
       viewer?.entities.remove(entity);
@@ -592,14 +592,14 @@ async function loadCities() {
         entity.addProperty('latitude', latitude);
 
         loadedCount++;
-        
+
         // 每加载100个城市更新一次进度
         if (loadedCount % 100 === 0) {
           cityLoadingStatus.message = `已加载 ${loadedCount}/${cities.length} 个城市...`;
           // 让界面有机会更新
           await new Promise(resolve => setTimeout(resolve, 1));
         }
-        
+
       } catch (error) {
         console.error(`添加城市点失败 - ${city.name}:`, error);
         errorCount++;
@@ -610,13 +610,13 @@ async function loadCities() {
 
     // 通知面板城市数据已加载
     emitter.emit('cities-loaded', loadedCount);
-    
+
     // 飞行到中国中心位置以查看所有城市点
     cityLoadingStatus.message = '调整视角中...';
     await flyToChinaView();
-    
-  
-    
+
+
+
   } catch (error) {
     console.error('加载城市数据失败:', error);
     cityLoadingStatus.message = '加载失败: ' + (error as Error).message;
@@ -636,22 +636,22 @@ async function loadCities() {
 // 高德图层添加函数
 function addGaodeLayer() {
   if (!viewer) return;
-  
-  const existingLayer = viewer.imageryLayers._layers.find(layer => 
+
+  const existingLayer = viewer.imageryLayers._layers.find(layer =>
     layer.name === "高德矢量"
   );
-  
+
   if (existingLayer) {
     console.log("高德矢量图层已存在");
     return;
   }
-  
+
   try {
     const gdProvider = new Cesium.UrlTemplateImageryProvider({
       url: "https://webrd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}",
       maximumLevel: 18
     });
-    
+
     const gdLayer = viewer.imageryLayers.addImageryProvider(gdProvider);
     gdLayer.name = "高德矢量";
     console.log("已添加图层：", gdLayer.name);
@@ -681,7 +681,7 @@ function showLayers() {
   console.log(layers);
 
   let layersString = "";
-  let layersList: (string|undefined)[] = [];
+  let layersList: (string | undefined)[] = [];
   for (let i = 0; i < layers.length; i++) {
     layersString += layers.get(i).name + "\n";
     layersList.push(layers.get(i).name);
@@ -693,12 +693,12 @@ function showLayers() {
 // 移除所有图层
 function removeAll() {
   if (!viewer) return;
-  
+
   const layers = viewer.imageryLayers;
   for (let i = layers.length - 1; i >= 0; i--) {
     const layer = layers.get(i);
     const provider = layer.imageryProvider;
-    
+
     if (provider && typeof provider.destroy === 'function') {
       try {
         provider.destroy();
@@ -706,10 +706,10 @@ function removeAll() {
         console.warn("销毁图层提供者时出错:", error);
       }
     }
-    
+
     layers.remove(layer, true);
   }
-  
+
   console.log("已清除所有图层");
 }
 
@@ -718,19 +718,19 @@ async function highlightCity(cityName: string): Promise<boolean> {
   if (!cityName || typeof cityName !== 'string' || !viewer) {
     return false;
   }
-  
+
   try {
     // 重置所有城市点样式
     viewer.entities.values.forEach((entity) => {
-      if (entity.point && entity.name !== '书签点' && 
-          (!entity.properties || !entity.properties.hasProperty('articleId'))) {
+      if (entity.point && entity.name !== '书签点' &&
+        (!entity.properties || !entity.properties.hasProperty('articleId'))) {
         entity.point = cesiumStore.pointStyles.normal;
         if (entity.label) {
           entity.label.show = false;
         }
       }
     });
-    
+
     // 查找并高亮指定城市
     const entity = viewer.entities.getById(cityName);
     if (entity && entity.point) {
@@ -738,7 +738,7 @@ async function highlightCity(cityName: string): Promise<boolean> {
       if (entity.label) {
         entity.label.show = true;
       }
-      
+
       // 飞行到该城市
       if (entity.position) {
         await viewer.camera.flyTo({
@@ -746,7 +746,7 @@ async function highlightCity(cityName: string): Promise<boolean> {
           duration: 1.5
         });
       }
-      
+
       console.log(`已高亮城市: ${cityName}`);
       return true;
     } else {
@@ -774,7 +774,7 @@ function addBookmarkPoint(position: unknown) {
       },
     });
     cesiumStore.bookmarkEntities.add(entity);
-    
+
     cesiumStore.bookmarkEntities.values.map((entity: Cesium.Entity) => {
       viewer?.entities.remove(entity);
     });
@@ -787,26 +787,26 @@ function addBookmarkPoint(position: unknown) {
 // 显示/隐藏城市标签
 function toggleCityLabels(show: boolean): void {
   if (!viewer) return;
-  
+
   viewer.entities.values.forEach(entity => {
-    if (entity.label && entity.name !== '书签点' && 
-        (!entity.properties || !entity.properties.hasProperty('articleId'))) {
+    if (entity.label && entity.name !== '书签点' &&
+      (!entity.properties || !entity.properties.hasProperty('articleId'))) {
       entity.label.show = new Cesium.ConstantProperty(show);
     }
   });
-  
+
   console.log(`城市标签${show ? '显示' : '隐藏'}`);
 }
 
 // 根据省份筛选城市
 function filterCitiesByProvince(provinceName: string | null): void {
   if (!viewer) return;
-  
+
   viewer.entities.values.forEach(entity => {
-    if (entity.point && entity.name !== '书签点' && 
-        (!entity.properties || !entity.properties.hasProperty('articleId'))) {
+    if (entity.point && entity.name !== '书签点' &&
+      (!entity.properties || !entity.properties.hasProperty('articleId'))) {
       const entityProvince = entity.properties?.province?.getValue();
-      
+
       if (provinceName === null) {
         entity.show = true;
       } else {
@@ -814,7 +814,7 @@ function filterCitiesByProvince(provinceName: string | null): void {
       }
     }
   });
-  
+
   console.log(`筛选显示${provinceName || '所有'}省份的城市`);
 }
 watch(
@@ -830,7 +830,7 @@ onMounted(async () => {
   Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwZjEyZjczNS0wODgxLTRmYzMtOWU3MC00ZDIwZGUwMWM5NDMiLCJpZCI6MjgzMTE2LCJpYXQiOjE3NDIxODM2MDB9.6r_855sbwTi1KruUVqqC88aEcboIRcQNMg2ouQ9fPs8';
 
   if (!mapRef.value) return;
-  
+
   try {
     await cesiumStore.initViewer(mapRef.value);
     viewer = cesiumStore.viewer;
@@ -844,7 +844,7 @@ onMounted(async () => {
     }
 
     console.log("Cesium viewer 初始化成功");
-    
+
     // 发送viewer就绪事件，通知LayerPanel可以开始初始化图层
     emitter.emit('viewer-ready');
 
@@ -914,10 +914,10 @@ onUnmounted(() => {
   emitter.off('clear-news', clearNewsPoints);
   emitter.off('toggle-news-labels', toggleNewsLabels);
   emitter.off('filter-news-by-category', filterNewsByCategory);
-  
+
   // 清理全局viewer引用
   (window as any).cesiumViewer = null;
-  
+
   // 清理viewer
   if (viewer && !viewer.isDestroyed()) {
     try {
@@ -934,48 +934,52 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
-  
+
   .cesium-viewer {
     width: 100%;
     height: 100%;
     margin: 0;
   }
 }
+
 .filter-form {
   position: absolute;
   top: 200;
   left: 0;
   right: 0;
   bottom: 0;
-  width:600px;
-  height:80px;
+  width: 600px;
+  height: 80px;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100000;
+
   label {
     display: flex;
     align-items: center;
     margin-right: 16px;
-    
-    input, select {
+
+    input,
+    select {
       margin-left: 8px;
       padding: 4px 8px;
       border-radius: 4px;
       border: 1px solid #ccc;
       font-size: 14px;
     }
-    
+
     input[type="date"] {
       width: 150px;
     }
-    
+
     select {
       width: 120px;
     }
   }
 }
+
 // 加载状态遮罩
 .loading-overlay {
   position: absolute;
@@ -988,14 +992,14 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  
+
   .loading-content {
     background: rgba(255, 255, 255, 0.95);
     padding: 30px;
     border-radius: 10px;
     text-align: center;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    
+
     .loading-spinner {
       width: 40px;
       height: 40px;
@@ -1005,7 +1009,7 @@ onUnmounted(() => {
       animation: spin 1s linear infinite;
       margin: 0 auto 15px;
     }
-    
+
     .loading-text {
       font-size: 16px;
       color: #333;
@@ -1015,8 +1019,13 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 // 隐藏Cesium的logo

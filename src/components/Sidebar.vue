@@ -1,5 +1,5 @@
 <template>
-  <aside class="absolute left-0 top-0 h-full flex flex-row z-10">
+  <aside class="h-full flex flex-row z-10">
     <div class="w-10 bg-paper flex flex-col justify-between items-center z-20">
       <div>
         <SideButton :click="togglePanel">
