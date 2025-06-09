@@ -42,9 +42,10 @@ import { onMounted, onUnmounted, ref, reactive, watch } from "vue";
 import { useCesiumStore } from "@/stores/cesium";
 import LayerPanel from "./LayerPanel.vue";
 import * as Cesium from "cesium";
-import emitter from "../utils/emitter";
+import emitter from "@/utils/emitter";
 import axios from "axios";
-
+import { loadNewsData } from "@/stores/article";
+import type { LocationItem, Source, Article, CityData } from "@/types/news";
 const categories = [
   'technology', 'sports', 'entertainment',
   'general', 'health', 'science'
@@ -54,40 +55,6 @@ const filters = reactive({
   endTime: '',
   category: '',
 });
-
-// 新闻相关接口定义
-interface LocationItem {
-  location?: string;//虽然都有，但后面不需要
-  lat: number;
-  lng: number;
-}
-
-interface Source {
-  id: string | null;
-  name: string;
-}
-
-interface Article {
-  source: Source;
-  author: string;
-  title: string;
-  description: string;
-  url: string;
-  urlToImage: string | null;
-  publishedAt: string;
-  content: string | null;
-  location: LocationItem[];//一条新闻可能对应多个
-}
-
-// 城市数据接口定义
-interface CityData {
-  name: string;
-  code?: string;
-  centerPoint: string; // "经度,纬度" 格式
-  province?: string;
-  pinyin?: string;
-  level?: number;
-}
 
 const cesiumStore = useCesiumStore();
 const emit = defineEmits(['update']);
@@ -226,7 +193,9 @@ async function renderNewsArticles(
             outlineWidth: 2,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             scaleByDistance: new Cesium.NearFarScalar(1000, 1.2, 10000000, 0.4),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY
+            disableDepthTestDistance: 0,  // 禁用深度测试
+            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, Number.POSITIVE_INFINITY)
+            //disableDepthTestDistance: Number.POSITIVE_INFINITY
           },
           label: {
             text: article.title.length > 20 ? article.title.substring(0, 20) + '...' : article.title,
@@ -247,6 +216,7 @@ async function renderNewsArticles(
 
         // 添加新闻相关的自定义属性
         if (entity) {
+          entity.addProperty('articleId', article.id);
           entity.addProperty('newsTitle', article.title);
           entity.addProperty('newsUrl', article.url);
           entity.addProperty('newsCategory', article.category || '');
@@ -280,16 +250,13 @@ async function renderNewsArticles(
 // 根据新闻类别获取颜色
 function getNewsColor(category?: string): Cesium.Color {
   const colorMap: { [key: string]: Cesium.Color } = {
-    '政治': Cesium.Color.RED,
-    '经济': Cesium.Color.GREEN,
     'technology': Cesium.Color.BLUE,
     'sports': Cesium.Color.ORANGE,
     'entertainment': Cesium.Color.MAGENTA,
     'general': Cesium.Color.YELLOW,
-    '国际': Cesium.Color.PURPLE,
-    '军事': Cesium.Color.DARKRED,
     'health': Cesium.Color.FORESTGREEN,
-    'science': Cesium.Color.PINK
+    'science': Cesium.Color.PINK,
+    'business': Cesium.Color.GOLD
   };
 
   return colorMap[category || ''] || Cesium.Color.CRIMSON;
