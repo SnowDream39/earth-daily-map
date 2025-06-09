@@ -3,7 +3,7 @@
     <div class="w-10 bg-paper flex flex-col justify-between items-center z-20">
       <div>
         <SideButton :click="togglePanel">
-          <div class="i-material-symbols-filter-alt-outline text-2xl" />
+          <div class="i-material-symbols-output text-2xl" />
         </SideButton>
       </div>
       <div>
@@ -19,8 +19,7 @@
       <div ref="panel"
         class="absolute top-0 left-0 h-full w-64 bg-base-100 shadow transition-transform transform -translate-x-full bg-paper">
         <div class="p-4">
-          <h2 class="text-xl font-bold mb-2">工具面板</h2>
-          <p>这里可以放内容、表单、设置项等。</p>
+          <ExportMap :centerLat="0" :centerLng="0" :zoom="1" :width="800" :height="600" :points="[]" />
         </div>
       </div>
     </div>
@@ -31,6 +30,7 @@
 
 <script setup lang="ts">
 
+import ExportMap from './exportMap.vue';
 import SideButton from './SideButton.vue';
 import { ref } from 'vue';
 
