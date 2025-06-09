@@ -1,31 +1,8 @@
 <template>
   <div class="cesium-container">
-    <!-- 筛选面板 -->
-    <div class="filter-form" style="margin-bottom: 16px;">
-      <label>
-        开始时间：
-        <input type="date" v-model="filters.startTime" />
-      </label>
-
-      <label style="margin-left: 12px;">
-        结束时间：
-        <input type="date" v-model="filters.endTime" />
-      </label>
-
-      <label style="margin-left: 12px;">
-        类别名称：
-        <select v-model="filters.category">
-          <option value="">全部</option>
-          <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-        </select>
-      </label>
-    </div>
-
     <!-- 地图容器 -->
     <div ref="mapRef" class="cesium-viewer"></div>
 
-    <!-- 组件面板 -->
-    <LayerPanel />
 
     <!-- 城市加载状态提示 -->
     <div v-if="cityLoadingStatus.isLoading" class="loading-overlay">
@@ -44,21 +21,22 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, reactive, watch } from "vue";
 import { useCesiumStore } from "@/stores/cesium";
-import LayerPanel from "./LayerPanel.vue";
 import * as Cesium from "cesium";
 import emitter from "@/utils/emitter";
 import axios from "axios";
 import { loadNewsData } from "@/stores/article";
 import type { LocationItem, Source, Article, CityData } from "@/types/news";
-const categories = [
-  'technology', 'sports', 'entertainment',
-  'general', 'health', 'science'
-];
+
 const filters = reactive({
   startTime: '',
   endTime: '',
   category: '',
 });
+
+const categories = [
+  'technology', 'sports', 'entertainment',
+  'general', 'health', 'science'
+];
 //弹窗事件：
 const showPopup = ref(false)
 const popupHtml = ref('')
@@ -270,28 +248,6 @@ function getNewsColor(category?: string): Cesium.Color {
   return colorMap[category || ''] || Cesium.Color.CRIMSON;
 }
 
-//调用新闻数据加载
-async function loadNewsData(
-  category?: string,
-  startTime?: string,
-  endTime?: string
-): Promise<Article[]> {
-  const params = new URLSearchParams();
-  if (category) params.append("category", category);
-  if (startTime) params.append("start_time", startTime);
-  if (endTime) params.append("end_time", endTime);
-
-  const response = await fetch(`http://8.209.210.116:7000/news/locations/articles/with-location?${params.toString()}`);
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || "请求失败");
-  }
-
-  const data = await response.json();
-
-  //data.articles已经是 Article 类型结构，直接返回即可
-  return data.articles as Article[];
-}
 
 // 清除所有新闻点
 function clearNewsPoints() {
@@ -630,20 +586,6 @@ function addGaodeLayer() {
   }
 }
 
-// 建筑物加载函数
-async function addBuildings() {
-  try {
-    const tileset = viewer?.scene.primitives.add(
-      await Cesium.Cesium3DTileset.fromIonAssetId(75343),
-    );
-    if (tileset) {
-      viewer?.zoomTo(tileset);
-    }
-  } catch (error) {
-    console.error('加载建筑物失败:', error);
-  }
-}
-
 // 显示图层信息
 function showLayers() {
   if (!viewer) return;
@@ -683,110 +625,6 @@ function removeAll() {
   console.log("已清除所有图层");
 }
 
-// 高亮城市函数
-async function highlightCity(cityName: string): Promise<boolean> {
-  if (!cityName || typeof cityName !== 'string' || !viewer) {
-    return false;
-  }
-
-  try {
-    // 重置所有城市点样式
-    viewer.entities.values.forEach((entity) => {
-      if (entity.point && entity.name !== '书签点' &&
-        (!entity.properties || !entity.properties.hasProperty('articleId'))) {
-        entity.point = cesiumStore.pointStyles.normal;
-        if (entity.label) {
-          entity.label.show = false;
-        }
-      }
-    });
-
-    // 查找并高亮指定城市
-    const entity = viewer.entities.getById(cityName);
-    if (entity && entity.point) {
-      entity.point = cesiumStore.pointStyles.highlight;
-      if (entity.label) {
-        entity.label.show = true;
-      }
-
-      // 飞行到该城市
-      if (entity.position) {
-        await viewer.camera.flyTo({
-          destination: entity.position.getValue(viewer.clock.currentTime),
-          duration: 1.5
-        });
-      }
-
-      console.log(`已高亮城市: ${cityName}`);
-      return true;
-    } else {
-      console.warn(`未找到城市: ${cityName}`);
-      return false;
-    }
-  } catch (error) {
-    console.error(`高亮城市失败 - ${cityName}:`, error);
-    return false;
-  }
-}
-
-// 添加书签点
-function addBookmarkPoint(position: unknown) {
-  if (position instanceof Cesium.Cartesian3) {
-    const entity = new Cesium.Entity({
-      name: '书签点',
-      position: position,
-      point: cesiumStore.pointStyles.bookmark,
-      label: {
-        text: '书签点',
-        horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        pixelOffset: new Cesium.Cartesian2(15, -15),
-      },
-    });
-    cesiumStore.bookmarkEntities.add(entity);
-
-    cesiumStore.bookmarkEntities.values.map((entity: Cesium.Entity) => {
-      viewer?.entities.remove(entity);
-    });
-    cesiumStore.bookmarkEntities.values.forEach((entity: Cesium.Entity) => {
-      viewer?.entities.add(entity);
-    });
-  }
-}
-
-// 显示/隐藏城市标签
-function toggleCityLabels(show: boolean): void {
-  if (!viewer) return;
-
-  viewer.entities.values.forEach(entity => {
-    if (entity.label && entity.name !== '书签点' &&
-      (!entity.properties || !entity.properties.hasProperty('articleId'))) {
-      entity.label.show = new Cesium.ConstantProperty(show);
-    }
-  });
-
-  console.log(`城市标签${show ? '显示' : '隐藏'}`);
-}
-
-// 根据省份筛选城市
-function filterCitiesByProvince(provinceName: string | null): void {
-  if (!viewer) return;
-
-  viewer.entities.values.forEach(entity => {
-    if (entity.point && entity.name !== '书签点' &&
-      (!entity.properties || !entity.properties.hasProperty('articleId'))) {
-      const entityProvince = entity.properties?.province?.getValue();
-
-      if (provinceName === null) {
-        entity.show = true;
-      } else {
-        entity.show = entityProvince === provinceName;
-      }
-    }
-  });
-
-  console.log(`筛选显示${provinceName || '所有'}省份的城市`);
-}
 watch(
   () => [filters.category, filters.startTime, filters.endTime],
   (newVals, oldVals) => {
@@ -819,21 +657,10 @@ onMounted(async () => {
     emitter.emit('viewer-ready');
 
     // 注册事件监听器
-    emitter.on('add-buildings', addBuildings);
     emitter.on('add-layer', addGaodeLayer);
     emitter.on('show-layers', showLayers);
     emitter.on('remove-all-layers', removeAll);
     emitter.on('load-cities', loadCities);
-    emitter.on('highlight-city', (event: unknown) => {
-      if (typeof event === 'string') highlightCity(event);
-    });
-    emitter.on('add-bookmark-point', addBookmarkPoint);
-    emitter.on('toggle-city-labels', (show: unknown) => {
-      if (typeof show === 'boolean') toggleCityLabels(show);
-    });
-    emitter.on('filter-cities-by-province', (event: unknown) => {
-      if (typeof event === 'string' || event === null) filterCitiesByProvince(event);
-    });
     // 新增新闻相关事件监听器
     // 定义 load-news 事件处理函数，便于 off 时引用
     const handleLoadNews = (event: unknown) => {
@@ -901,21 +728,10 @@ onMounted(async () => {
 // 组件卸载
 onUnmounted(() => {
   // 清理事件监听器
-  emitter.off('add-buildings', addBuildings);
   emitter.off('add-layer', addGaodeLayer);
   emitter.off('show-layers', showLayers);
   emitter.off('remove-all-layers', removeAll);
   emitter.off('load-cities', loadCities);
-  emitter.off('highlight-city', (event: unknown) => {
-    if (typeof event === 'string') highlightCity(event);
-  });
-  emitter.off('add-bookmark-point', addBookmarkPoint);
-  emitter.off('toggle-city-labels', (show: unknown) => {
-    if (typeof show === 'boolean') toggleCityLabels(show);
-  });
-  emitter.off('filter-cities-by-province', (event: unknown) => {
-    if (typeof event === 'string' || event === null) filterCitiesByProvince(event);
-  });
   // 清理新闻相关事件监听器
   emitter.off('load-news', renderNewsArticles);
   emitter.off('clear-news', clearNewsPoints);

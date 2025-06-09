@@ -21,7 +21,10 @@ export default defineConfig({
     'i-material-symbols-reply',
     'i-material-symbols-share',
   ],
-  shortcuts: [['bg-paper', 'bg-zinc-100 dark:bg-zinc-700!']],
+  shortcuts: [
+    ['bg-paper', 'bg-zinc-100 dark:bg-zinc-700!'],
+    ['bg-paper-heavy', 'bg-zinc-200 dark:bg-zinc-800!'],
+  ],
   content: {
     pipeline: {
       include: ['src/**/*.{vue,ts,js}'],

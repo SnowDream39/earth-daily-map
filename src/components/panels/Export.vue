@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="bg-paper">
     <h3>导出地图图片</h3>
 
     <div>
