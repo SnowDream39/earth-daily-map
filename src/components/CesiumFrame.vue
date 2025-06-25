@@ -376,6 +376,7 @@ onMounted(async () => {
 
     // 设置全局viewer引用（供新闻渲染函数使用）
     (window as any).cesiumViewer = viewer;
+    
 
     if (!viewer) {
       console.error("Cesium viewer 初始化失败");
@@ -383,7 +384,10 @@ onMounted(async () => {
     }
 
     console.log("Cesium viewer 初始化成功");
-
+    viewer.scene.screenSpaceCameraController.enableRotate = false; // 禁止鼠标左键旋转
+    viewer.scene.screenSpaceCameraController.enableZoom = true;   // 启用滚轮缩放
+    viewer.scene.screenSpaceCameraController.enableTranslate = true; // 启用右键平移
+    viewer.scene.screenSpaceCameraController.enableTilt = true;   // 启用倾斜
     // 发送viewer就绪事件，通知LayerPanel可以开始初始化图层
     emitter.emit('viewer-ready');
 
