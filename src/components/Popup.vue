@@ -1,5 +1,6 @@
 <template>
-  <div class="news-popup max-w-md p-4 rounded-lg shadow-lg border backdrop-blur" :class="{ 'night': isNight }">
+  <div class="news-popup absolute top-0 left-0 bg-paper! max-w-md p-4 rounded-lg shadow-lg border backdrop-blur"
+    :class="{ 'night': isNight }">
     <h3 class="text-lg font-bold text-red-700 dark:text-red-400 mb-3 leading-snug">
       {{ article.title }}
     </h3>
@@ -16,7 +17,7 @@
     </div>
 
     <div>
-      <a :href="article.url" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">
+      <a @click="router.push('/article')" class="text-blue-600 dark:text-blue-400 hover:underline">
         📰 阅读完整新闻
       </a>
     </div>
@@ -24,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import router from '@/router';
 import { computed } from 'vue';
 
 interface Article {

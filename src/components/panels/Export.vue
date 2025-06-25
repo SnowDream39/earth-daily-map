@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { defineProps } from 'vue'
-import { loadNewsData } from '@/stores/article'
+import { loadNewsData } from '@/utils/article'
 import { exportMap as exportMapApi } from '@/stores/export' // 修改导入名以避免冲突
 import axios from 'axios'
 

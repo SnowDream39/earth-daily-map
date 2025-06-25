@@ -21,11 +21,10 @@ import { onMounted, onUnmounted, ref, reactive, watch } from "vue";
 import { useCesiumStore } from "@/stores/cesium";
 import * as Cesium from "cesium";
 import emitter from "@/utils/emitter";
-import axios from "axios";
-import { loadNewsData } from "@/stores/article";
+import { loadNewsData } from "@/utils/article";
 import type { LocationItem, Source, Article, CityData } from "@/types/news";
 import Popup from "@/components/Popup.vue";
-
+import { useArticleStore } from '@/stores/article'
 
 const filters = reactive({
   startTime: '',
@@ -38,6 +37,7 @@ const categories = [
   'general', 'health', 'science'
 ];
 
+const articleStore = useArticleStore()
 const article = ref<any>();
 
 //弹窗事件：
@@ -417,6 +417,9 @@ onMounted(async () => {
             content: '', // 补充缺失字段
             location: [], // 补充缺失字段
           };
+          console.log('点了');
+          articleStore.current = article.value;
+          console.log(articleStore.current)
           showPopup.value = true;
         } else {
           showPopup.value = false;
@@ -446,10 +449,7 @@ onUnmounted(() => {
   emitter.off('show-layers', showLayers);
   emitter.off('remove-all-layers', removeAll);
   // 清理新闻相关事件监听器
-  emitter.off('load-news', renderNewsArticles);
   emitter.off('clear-news', clearNewsPoints);
-  emitter.off('toggle-news-labels', toggleNewsLabels);
-  emitter.off('filter-news-by-category', filterNewsByCategory);
 
   // 清理全局viewer引用
   (window as any).cesiumViewer = null;
