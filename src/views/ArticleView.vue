@@ -29,14 +29,14 @@
     </div>
 
     <!-- 评论组件 -->
-    <div class="mt-6">
+    <div class="mt-6 flex justify-center">
       <CommentFrame />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import CommentFrame from '../components/CommentFrame.vue';
+import CommentFrame from '../components/user/CommentFrame.vue';
 import { useArticleStore } from '@/stores/article';
 import router from '@/router';
 import { computed } from 'vue';

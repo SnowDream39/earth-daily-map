@@ -3,23 +3,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-
+import { computed } from 'vue';
 
 const props = defineProps<{
-  classBefore: string,
-  classAfter: string,
-  action: any
+  id: number
 }>()
 
-const visited = ref(false)
+const active = defineModel()
 const dynamicClass = computed(() => {
-  return visited.value ? props.classAfter : props.classBefore
+  return 'i-material-symbols-reply'
 })
 
 const click = () => {
-  visited.value = true;
-  props.action()
+  if (active.value) {
+  } else {
+  }
+  active.value = !active.value;
 }
-
+props
 </script>
+

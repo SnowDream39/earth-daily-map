@@ -14,6 +14,9 @@
         </SideButton>
       </div>
       <div>
+        <SideButton :click="() => router.push('/user')">
+          <div class="i-material-symbols-account-circle text-2xl" />
+        </SideButton>
         <SideButton :click="() => openPanel('settings')">
           <div class="i-material-symbols-settings text-2xl" />
         </SideButton>
@@ -57,6 +60,7 @@ import ExportPanel from './panels/Export.vue'
 import FilterPanel from './panels/Filter.vue'
 import LayersPanel from './panels/Layers.vue'
 import SettingsPanel from './panels/Settings.vue'
+import router from '@/router'
 
 const currentPanelComponent = computed(() => {
   if (currentPanel.value === 'export') return ExportPanel
